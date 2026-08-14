@@ -86,17 +86,15 @@ async fn run(cli: &Cli) -> Result<()> {
     let processed = processor.process(&raw_diff);
     log_verbose(cli.verbose, "diff 处理完成", |c| {
         c.push_str(&format!(
-            "raw={} chars, processed={} chars, truncated={}, secrets={}",
+            "raw={} chars, processed={} chars, truncated={}",
             raw_diff.len(),
             processed.text.len(),
             processed.truncated,
-            processed.secrets.len()
         ));
     });
 
     // 4. 收集 Git 上下文
-    let has_secrets = processed.has_secrets();
-    let context = repo.context(processed.text, processed.truncated, has_secrets, summary)?;
+    let context = repo.context(processed.text, processed.truncated, summary)?;
     log_verbose(cli.verbose, "Git 上下文已收集", |c| {
         c.push_str(&format!(
             "branch={}, recent_commits={}",
@@ -113,19 +111,7 @@ async fn run(cli: &Cli) -> Result<()> {
         context.summary.files, context.summary.insertions, context.summary.deletions
     );
 
-    // 6. 敏感信息处理：已脱敏，但提醒用户并允许取消
-    if context.has_secrets {
-        eprintln!("\n⚠ 检测到可能包含敏感信息（密钥、密码等），已尽可能脱敏：");
-        for finding in &processed.secrets {
-            eprintln!("  • {} : {}", finding.path, finding.detail);
-        }
-        if !cli.yes && !confirm("仍要将脱敏后的 diff 发送给 AI 吗？", false)? {
-            eprintln!("Commit cancelled.");
-            return Err(Error::Cancelled);
-        }
-    }
-
-    // 7. 调用 AI 生成 commit message
+    // 6. 调用 AI 生成 commit message
     let provider = ai::create(&config)?;
     log_verbose(cli.verbose, "AI provider 已创建", |c| {
         c.push_str(&format!(
@@ -145,12 +131,12 @@ async fn run(cli: &Cli) -> Result<()> {
         c.push_str(&format!("subject={}", message.subject));
     });
 
-    // 8. 校验并提示
+    // 7. 校验并提示
     for warning in message.check(&config) {
         eprintln!("⚠ {warning}");
     }
 
-    // 9. 展示结果
+    // 8. 展示结果
     println!("\nGenerated commit message:\n");
     println!("  {}", message.subject);
     for line in &message.body {
@@ -158,19 +144,19 @@ async fn run(cli: &Cli) -> Result<()> {
     }
     println!();
 
-    // 10. dry-run 提前结束
+    // 9. dry-run 提前结束
     if cli.dry_run {
         println!("（dry run）未执行提交。");
         return Ok(());
     }
 
-    // 11. 确认提交
+    // 10. 确认提交
     if !cli.yes && !confirm("Commit this change?", true)? {
         eprintln!("Commit cancelled.");
         return Err(Error::Cancelled);
     }
 
-    // 12. 执行提交
+    // 11. 执行提交
     let hash = repo.commit(&message.formatted())?;
     println!("✓ Commit created\n");
     println!("[{}] {}", hash, message.subject);

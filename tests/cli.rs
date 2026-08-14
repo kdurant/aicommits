@@ -144,19 +144,6 @@ fn verbose_flag_prints_debug_info() {
     assert!(err.contains("Git 仓库已发现"));
 }
 
-#[test]
-fn secret_diff_is_redacted_before_sending() {
-    let dir = setup_repo();
-    fs::write(dir.path().join(".env"), "API_KEY=sk-super-secret-value\n").unwrap();
-    git_add(&dir);
-
-    // --yes 跳过敏感信息确认；mock 响应固定，不真正发送
-    let output = run(&dir, &["--yes", "--dry-run"]);
-    assert!(output.status.success());
-    // 脱敏后 diff 不会包含真实密钥
-    assert!(!stdout(&output).contains("sk-super-secret-value"));
-}
-
 fn git_add(dir: &TempDir) {
     let status = Command::new("git")
         .args(["add", "-A"])

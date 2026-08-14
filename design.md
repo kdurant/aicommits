@@ -501,42 +501,11 @@ aicommits --verbose
 
 ## 11. 安全要求
 
-非常重要：
+当前实现不执行敏感信息检测或脱敏，暂存的 diff 会按原样发送给 AI。
 
-不要把以下内容无条件发送给 AI：
+请自行确认暂存区不包含密钥、密码、私钥等敏感信息（例如 `.env`、credentials、private keys、tokens、SSH keys 等），不要把敏感内容提交进 Git 仓库。
 
-* `.env`
-* credentials
-* private keys
-* passwords
-* tokens
-* SSH keys
-* secret configuration
-
-至少实现一个基本的 secret redaction 层。
-
-例如检测：
-
-```text
-API_KEY=
-SECRET=
-PASSWORD=
-TOKEN=
-PRIVATE KEY
-```
-
-以及常见 private key：
-
-```text
------BEGIN PRIVATE KEY-----
------BEGIN RSA PRIVATE KEY-----
-```
-
-对于明显包含敏感信息的 diff，应该：
-
-1. 警告用户；
-2. 尽可能进行脱敏；
-3. 或要求用户确认后再发送。
+API key 通过环境变量 `OPENCODE_API_KEY` / `AICOMMITS_API_KEY` 提供，不要写入 Git 仓库。
 
 ---
 
@@ -673,7 +642,6 @@ git commit
 * 配置文件
 * 环境变量
 * diff truncation
-* secret redaction
 * verbose logging
 
 ### Phase 4

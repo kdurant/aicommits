@@ -9,7 +9,7 @@
 - 交互确认后执行 `git commit`，支持 `--yes` 全自动
 - `--dry-run` 只生成消息不提交
 - `--verbose` 显示 Git 与 AI 请求调试信息
-- diff 处理器：大 diff 自动截断、敏感信息（API key / 密码 / 私钥）自动脱敏
+- diff 处理器：大 diff 自动截断
 - 抽象 AI provider：默认使用 OpenCode Go 订阅的 HTTP API（OpenAI-compatible），无需安装任何 CLI
 
 ## Installation
@@ -115,20 +115,18 @@ timeout_secs = 180                        # AI 请求超时（秒）
 
 环境变量的优先级高于配置文件：
 
-| 变量 | 说明 |
-| --- | --- |
-| `AICOMMITS_PROVIDER` | 覆盖 provider |
-| `AICOMMITS_MODEL` | 覆盖模型 |
-| `AICOMMITS_API_KEY` | OpenCode Go API key |
-| `OPENCODE_API_KEY` | OpenCode Go API key（次优先） |
-| `OPENCODE_BASE_URL` | 覆盖 API 端点 |
+| 变量                 | 说明                          |
+| -------------------- | ----------------------------- |
+| `AICOMMITS_PROVIDER` | 覆盖 provider                 |
+| `AICOMMITS_MODEL`    | 覆盖模型                      |
+| `AICOMMITS_API_KEY`  | OpenCode Go API key           |
+| `OPENCODE_API_KEY`   | OpenCode Go API key（次优先） |
+| `OPENCODE_BASE_URL`  | 覆盖 API 端点                 |
 
 CLI 参数（`--provider` / `--model`）优先级最高。模型名可以带 `opencode-go/` 前缀（如 `opencode-go/deepseek-v4-flash`），工具会自动去除前缀。
 
 ## Security
 
-- 发送给 AI 的内容会经过 secret redaction：检测 `API_KEY=`、`SECRET=`、`PASSWORD=`、`TOKEN=`、`PRIVATE KEY` 块以及 `.env`、`*.pem`、`id_rsa` 等敏感路径，将敏感值替换为 `[REDACTED]`。
-- 检测到敏感信息时，除非使用 `--yes`，否则会要求你确认后再发送。
 - 大 diff 会按 `max_diff_chars` 截断，并明确告知 AI「截断的部分可能仍存在变更」。
 - API key 通过环境变量 `OPENCODE_API_KEY` / `AICOMMITS_API_KEY` 提供，不要写入 Git 仓库。
 
@@ -148,7 +146,7 @@ src/
 ├── config.rs        # 配置文件 + 环境变量
 ├── error.rs         # 统一错误类型
 ├── git.rs           # Git 操作封装
-├── diff.rs          # diff 截断 + 敏感信息脱敏
+├── diff.rs          # diff 截断
 ├── prompt.rs        # AI prompt 构建
 ├── commit.rs        # commit message 解析/校验
 └── ai/

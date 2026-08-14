@@ -67,7 +67,6 @@ mod tests {
             ],
             diff: "diff --git a/src/main.rs b/src/main.rs\n+fn main() {}\n".to_string(),
             truncated: false,
-            has_secrets: false,
             summary: DiffSummary {
                 files: 1,
                 insertions: 1,

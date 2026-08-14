@@ -18,7 +18,6 @@ pub struct GitContext {
     pub recent_commits: Vec<String>,
     pub diff: String,
     pub truncated: bool,
-    pub has_secrets: bool,
     pub summary: DiffSummary,
 }
 
@@ -184,7 +183,6 @@ impl GitRepository {
         &self,
         diff: String,
         truncated: bool,
-        has_secrets: bool,
         summary: DiffSummary,
     ) -> Result<GitContext> {
         let branch = self.current_branch()?;
@@ -194,7 +192,6 @@ impl GitRepository {
             recent_commits,
             diff,
             truncated,
-            has_secrets,
             summary,
         })
     }
