@@ -55,6 +55,10 @@ impl CommitMessage {
     /// 组装成适合直接提交的完整 message。
     pub fn formatted(&self) -> String {
         let mut text = self.subject.clone();
+        if !self.body.is_empty() {
+            // Conventional Commits 要求 subject 与 body 之间空一行
+            text.push('\n');
+        }
         for line in &self.body {
             text.push('\n');
             text.push_str(line);
@@ -224,6 +228,15 @@ mod tests {
             subject: "feat: x".to_string(),
             body: vec!["- one".to_string(), "- two".to_string()],
         };
-        assert_eq!(msg.formatted(), "feat: x\n- one\n- two");
+        assert_eq!(msg.formatted(), "feat: x\n\n- one\n- two");
+    }
+
+    #[test]
+    fn formatted_subject_only_has_no_trailing_blank_line() {
+        let msg = CommitMessage {
+            subject: "feat: x".to_string(),
+            body: Vec::new(),
+        };
+        assert_eq!(msg.formatted(), "feat: x");
     }
 }

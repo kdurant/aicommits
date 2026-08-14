@@ -23,6 +23,9 @@ pub fn build(context: &GitContext, max_subject_length: usize) -> String {
     prompt.push_str("- Do not invent functionality.\n");
     prompt.push_str("- Base the message only on the actual changes.\n");
     prompt.push_str("- Prefer a concise single-line subject.\n");
+    prompt.push_str("- For simple changes, output only the single-line subject, with no body.\n");
+    prompt.push_str("- For complex changes, add a blank line, then a short bullet list of key changes (one per line, each starting with \"-\").\n");
+    prompt.push_str("- Write the body as concise bullet points, never as a long paragraph.\n");
     prompt.push_str("- Do not include Markdown.\n");
     prompt.push_str("- Do not explain your reasoning.\n");
     prompt.push_str("- Output only the commit message.\n\n");
@@ -113,5 +116,14 @@ mod tests {
     fn prompt_respects_max_subject_length() {
         let prompt = build(&sample_context(), 50);
         assert!(prompt.contains("under 50 characters"));
+    }
+
+    #[test]
+    fn prompt_guides_bullet_list_body_for_complex_changes() {
+        let prompt = build(&sample_context(), 72);
+        assert!(prompt.contains("bullet list of key changes"));
+        assert!(prompt.contains("each starting with \"-\""));
+        assert!(prompt.contains("never as a long paragraph"));
+        assert!(prompt.contains("no body"));
     }
 }

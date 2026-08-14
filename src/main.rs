@@ -139,8 +139,11 @@ async fn run(cli: &Cli) -> Result<()> {
     // 8. 展示结果
     println!("\nGenerated commit message:\n");
     println!("  {}", message.subject);
-    for line in &message.body {
-        println!("  {line}");
+    if !message.body.is_empty() {
+        println!();
+        for line in &message.body {
+            println!("  {line}");
+        }
     }
     println!();
 
