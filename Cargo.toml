@@ -1,0 +1,25 @@
+[package]
+name = "aicommits"
+version = "0.1.0"
+edition = "2024"
+description = "AI-powered Git commit message generator with interactive confirmation"
+license = "MIT"
+rust-version = "1.85"
+
+[dependencies]
+async-trait = "0.1"
+clap = { version = "4", features = ["derive"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+toml = "0.8"
+thiserror = "2"
+dialoguer = "0.11"
+dirs = "6"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+strip = true
