@@ -12,7 +12,8 @@ const DEFAULT_TIMEOUT_SECS: u64 = 180;
 /// 默认 OpenCode Go 订阅 API 端点（OpenAI-compatible）。
 pub const DEFAULT_BASE_URL: &str = "https://opencode.ai/zen/go/v1";
 /// 未配置模型时的默认模型。
-pub const DEFAULT_MODEL: &str = "deepseek-v4-flash";
+// pub const DEFAULT_MODEL: &str = "deepseek-v4-flash";
+pub const DEFAULT_MODEL: &str = "mimo-v2.5";
 
 /// 运行时配置：由配置文件 + 环境变量 + CLI 参数合并得到。
 #[derive(Debug, Clone)]
