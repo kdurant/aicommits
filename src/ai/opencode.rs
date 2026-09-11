@@ -21,6 +21,7 @@ pub struct OpenCodeGoProvider {
     api_key: String,
     max_subject_length: usize,
     timeout: std::time::Duration,
+    session_id: String,
 }
 
 impl OpenCodeGoProvider {
@@ -49,6 +50,7 @@ impl OpenCodeGoProvider {
             api_key,
             max_subject_length: config.max_subject_length,
             timeout: config.timeout,
+            session_id: new_session_id(),
         })
     }
 
@@ -69,6 +71,8 @@ impl OpenCodeGoProvider {
             .post(&url)
             .bearer_auth(&self.api_key)
             .header("Content-Type", "application/json")
+            .header("User-Agent", user_agent())
+            .header("x-opencode-session", &self.session_id)
             .json(&body)
             .send()
             .await
@@ -109,6 +113,59 @@ fn strip_provider_prefix(model: &str) -> String {
         .map(|(_, rest)| rest)
         .unwrap_or(model)
         .to_string()
+}
+
+/// OpenCode Go 要求客户端标识自己的 User-Agent（而非通用 SDK 名）。
+fn user_agent() -> String {
+    format!("aicommits/{}", env!("CARGO_PKG_VERSION"))
+}
+
+/// 生成一个 UUID v4 格式的会话 ID。
+///
+/// OpenCode Go 要求以 `x-opencode-session` 发送稳定的会话 ID 以便路由与提示缓存。
+/// 每次运行只生成一次，同一次运行内的请求复用同一个 ID。
+fn new_session_id() -> String {
+    use std::collections::hash_map::RandomState;
+    use std::hash::{BuildHasher, Hasher};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    let seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+
+    let mut bytes = [0u8; 16];
+    for (i, chunk) in bytes.chunks_mut(8).enumerate() {
+        let mut hasher = RandomState::new().build_hasher();
+        hasher.write_u128(seed);
+        hasher.write_usize(i);
+        let value = hasher.finish().to_le_bytes();
+        chunk.copy_from_slice(&value[..chunk.len()]);
+    }
+    // 按 RFC 4122 设置版本（4）与变体位
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+
+    let hex = |b: u8| format!("{b:02x}");
+    format!(
+        "{}{}{}{}-{}{}-{}{}-{}{}-{}{}{}{}{}{}",
+        hex(bytes[0]),
+        hex(bytes[1]),
+        hex(bytes[2]),
+        hex(bytes[3]),
+        hex(bytes[4]),
+        hex(bytes[5]),
+        hex(bytes[6]),
+        hex(bytes[7]),
+        hex(bytes[8]),
+        hex(bytes[9]),
+        hex(bytes[10]),
+        hex(bytes[11]),
+        hex(bytes[12]),
+        hex(bytes[13]),
+        hex(bytes[14]),
+        hex(bytes[15]),
+    )
 }
 
 /// 读取本机 opencode 的 auth.json 中 opencode-go 的 API key（如果存在）。
@@ -182,5 +239,16 @@ mod tests {
         if let Some(key) = read_opencode_auth_key() {
             assert!(key.starts_with("sk-"));
         }
+    }
+
+    #[test]
+    fn session_id_is_uuid_v4_like_and_unique() {
+        let a = new_session_id();
+        let b = new_session_id();
+        assert_ne!(a, b);
+        assert_eq!(a.len(), 36);
+        let lengths: Vec<usize> = a.split('-').map(str::len).collect();
+        assert_eq!(lengths, [8, 4, 4, 4, 12]);
+        assert!(a.chars().all(|c| c == '-' || c.is_ascii_hexdigit()));
     }
 }
